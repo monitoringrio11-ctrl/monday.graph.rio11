@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dashboard ผลเบิกจ่าย สชป.11</title>
+<title>Dashboard ผลเบิกจ่าย สชป.11 ประจำสัปดาห์<</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -94,8 +94,8 @@ tfoot tr td.ft-pct{text-align:center}
 <div class="header-left">
 <div class="header-logo">💧</div>
 <div class="header-title">
-<h1>Dashboard ผลการเบิกจ่ายงบประมาณ</h1>
-<p>สำนักงานชลประทานที่ 11 | ปีงบประมาณ 2568</p>
+<h1>Dashboard ผลการเบิกจ่ายงบประมาณ ประจำสัปดาห์ (ทุกวันจันทร์)</h1>
+<p>สำนักงานชลประทานที่ 11 | ปีงบประมาณ 2570</p>
 </div>
 </div>
 <div class="header-right">
@@ -110,7 +110,7 @@ tfoot tr td.ft-pct{text-align:center}
 <div class="error-bar" id="error-bar">⚠️ <span id="error-msg"></span></div>
 <!-- Stat Cards -->
 <div class="stat-row" id="stat-row" style="display:none">
-<div class="stat-card" style="border-color:#2e86c1"><div class="stat-label">ผลเบิกจ่ายรวม (พรบ โอนจัดสรร)</div><div class="stat-value" id="stat-avg1">—</div><div class="stat-sub">ผลเบิกจ่ายรวม ÷ ได้รับจัดสรรรวม</div></div>
+<div class="stat-card" style="border-color:#2e86c1"><div class="stat-label">ผลเบิกจ่ายรวม (พรบ โอนจัดสรร)</div><div class="stat-value" id="stat-avg1">—</div><div class="stat-sub">ผลเบิกจ่ายรวม / ได้รับจัดสรรรวม</div></div>
 <div class="stat-card" style="border-color:#f39c12"><div class="stat-label">แผนเบิกจ่ายรวม</div><div class="stat-value" id="stat-plan1">—</div><div class="stat-sub">ถ่วงน้ำหนักตามงบจัดสรร</div></div>
 <div class="stat-card" style="border-color:#27ae60"><div class="stat-label">หน่วยงานที่บรรลุแผน</div><div class="stat-value" id="stat-pass">—</div><div class="stat-sub">ผลเบิกจ่าย ≥ แผน</div></div>
 <div class="stat-card" style="border-color:#e74c3c"><div class="stat-label">หน่วยงานต่ำกว่าแผน</div><div class="stat-value" id="stat-fail">—</div><div class="stat-sub">ต้องเร่งรัด</div></div>
@@ -145,7 +145,7 @@ tfoot tr td.ft-pct{text-align:center}
 </div>
 <!-- Section 2 -->
 <div class="section-card" id="section2">
-<div class="section-header"><span class="icon">📋</span><div><h2>ตารางข้อมูลรายหน่วยงาน (งบ พรบ. เทียบงบโอนจัดสรร)</h2><div class="sub">ชีต พรบ | คอลัมน์ B–L | แถวที่ 7–23</div></div></div>
+<div class="section-header"><span class="icon">📋</span><div><h2>ตารางข้อมูลรายหน่วยงาน (งบ พรบ. เทียบงบโอนจัดสรร)</h2><div class="sub">งบลงทุน</div></div></div>
 <div class="section-body"><div class="table-scroll"><table id="table1"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
 </div>
 <!-- Section 3 -->
@@ -166,7 +166,7 @@ tfoot tr td.ft-pct{text-align:center}
 </div>
 <!-- Section 3b -->
 <div class="section-card" id="section3b">
-<div class="section-header"><span class="icon">📊</span><div><h2>กราฟแผนเบิกจ่ายรายไตรมาส vs ผลเบิกจ่าย (งบ พรบ. เทียบงบ พรบ)</h2><div class="sub">ชีต คาดการณ์ M-R แถว 43–59 | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
+<div class="section-header"><span class="icon">📊</span><div><h2>กราฟแผนเบิกจ่ายรายไตรมาส vs ผลเบิกจ่าย (งบ พรบ. เทียบงบ พรบ)</h2><div class="sub">งบลงทุน | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
 <div class="section-body">
 <div class="chart-wrapper-xl"><canvas id="chart3b"></canvas></div>
 <div class="legend-box">
@@ -180,17 +180,17 @@ tfoot tr td.ft-pct{text-align:center}
 </div>
 <!-- Section 4 -->
 <div class="section-card" id="section4">
-<div class="section-header"><span class="icon">📋</span><div><h2>ตารางข้อมูลรายหน่วยงาน (งบ พรบ. เทียบงบ พรบ)</h2><div class="sub">ชีต พรบ.(เทียบงบ พรบ) | คอลัมน์ R–AB | แถวที่ 7–23</div></div></div>
+<div class="section-header"><span class="icon">📋</span><div><h2>ตารางข้อมูลรายหน่วยงาน (งบ พรบ. เทียบงบ พรบ)</h2><div class="sub">งบลงทุน</div></div></div>
 <div class="section-body"><div class="table-scroll"><table id="table4"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
 </div>
 <!-- Section 5 -->
 <div class="section-card" id="section5">
-<div class="section-header"><span class="icon">🏛️</span><div><h2>กราฟสรุปผลเบิกจ่าย 17 สำนัก</h2><div class="sub">ชีต สรุป17สำนัก | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
+<div class="section-header"><span class="icon">🏛️</span><div><h2>กราฟสรุปผลเบิกจ่าย 17 สำนัก</h2><div class="sub">งบลงทุน | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
 <div class="section-body"><div class="chart-wrapper-lg"><canvas id="chart5"></canvas></div></div>
 </div>
 <!-- Section 6 -->
 <div class="section-card" id="section6">
-<div class="section-header"><span class="icon">📋</span><div><h2>ตารางสรุปผลเบิกจ่าย 17 สำนัก</h2><div class="sub">ชีต สรุป17สำนัก | แถวที่ 4–20</div></div></div>
+<div class="section-header"><span class="icon">📋</span><div><h2>ตารางสรุปผลเบิกจ่าย 17 สำนัก</h2><div class="sub">งบลงทุน</div></div></div>
 <div class="section-body"><div class="table-scroll"><table id="table6"><thead></thead><tbody></tbody></table></div></div>
 </div>
 </div>
