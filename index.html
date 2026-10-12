@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard ผลเบิกจ่าย สชป.11</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--primary:#1a5276;--secondary:#2e86c1;--success:#27ae60;--danger:#e74c3c;--light:#eaf4fb;--border:#d0e8f5;--text:#1c2833;--muted:#7f8c8d;--col-alloc:#dbeafe;--col-alloc-dark:#93c5fd;--col-result:#dcfce7;--col-result-dark:#86efac}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun','Segoe UI',sans-serif;background:#f0f4f8;color:var(--text);font-size:14px}
+.header{background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(0,0,0,.2);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-logo{width:46px;height:46px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.header-title h1{font-size:16px;font-weight:700}
+.header-title p{font-size:11px;opacity:.85;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.report-date{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 11px;font-size:12px}
+.btn{padding:6px 13px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:all .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.btn-jpeg{background:#e67e22;color:#fff}.btn-pdf{background:#e74c3c;color:#fff}
+.btn-link{background:#27ae60;color:#fff}.btn-copy{background:#8e44ad;color:#fff}
+.btn-refresh{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)}
+#loading-overlay{position:fixed;inset:0;background:rgba(26,82,118,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff}
+.spinner{width:54px;height:54px;border:5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .9s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.container{max-width:1400px;margin:0 auto;padding:18px 14px}
+.section-card{background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);margin-bottom:20px;overflow:hidden}
+.section-header{background:linear-gradient(90deg,var(--primary),var(--secondary));color:#fff;padding:11px 18px;display:flex;align-items:center;gap:10px}
+.section-header .icon{font-size:17px}
+.section-header h2{font-size:13px;font-weight:700}
+.section-header .sub{font-size:10px;opacity:.8;margin-top:2px}
+.section-body{padding:16px}
+.chart-wrapper{position:relative;width:100%;height:clamp(260px,40vw,400px)}
+.chart-wrapper-lg{position:relative;width:100%;height:clamp(320px,50vw,520px)}
+.chart-wrapper-xl{position:relative;width:100%;height:clamp(340px,55vw,460px)}
+.table-scroll{overflow-x:auto;border-radius:8px;border:1px solid var(--border);-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:650px}
+thead tr th{background:var(--primary);color:#fff;padding:7px 9px;text-align:center;font-weight:600;border:1px solid rgba(255,255,255,.15);white-space:nowrap}
+th.th-alloc{background:#1e6091!important}th.th-result{background:#1a7a4a!important}th.th-pct{background:#7d3c98!important}
+tbody td{padding:5px 9px;border:1px solid var(--border);text-align:right;white-space:nowrap}
+tbody td:first-child{text-align:left;font-weight:600;min-width:120px}
+tbody td.td-alloc{background:var(--col-alloc)}tbody td.td-alloc-sum{background:var(--col-alloc-dark);font-weight:700}
+tbody td.td-result{background:var(--col-result)}tbody td.td-result-sum{background:var(--col-result-dark);font-weight:700}
+tbody tr:hover td{filter:brightness(.95)}
+tbody td.pct{text-align:center;font-weight:600}
+tbody td.neg{color:#e74c3c;font-weight:700}tbody td.pos{color:#27ae60;font-weight:600}
+tfoot tr td{background:#1a5276;color:#fff;font-weight:700;padding:6px 9px;border:1px solid rgba(255,255,255,.2);text-align:right;white-space:nowrap}
+tfoot tr td:first-child{text-align:left}
+tfoot tr td.td-alloc{background:#1e6091;color:#fff}tfoot tr td.td-result{background:#1a7a4a;color:#fff}
+tfoot tr td.ft-pct{text-align:center}
+.legend-box{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px}
+.legend-dot{width:12px;height:12px;border-radius:3px}.legend-dash{width:24px;height:0}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:15px;margin-bottom:12px;color:var(--primary)}
+.url-box{display:flex;gap:8px;margin-bottom:12px}
+.url-box input{flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px}
+.modal-close{margin-top:8px;width:100%;padding:9px;background:var(--muted);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px}
+.toast{position:fixed;bottom:20px;right:20px;background:#2ecc71;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .35s ease;z-index:9999}
+.toast.show{transform:translateY(0);opacity:1}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:#fff;border-radius:10px;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07);border-left:4px solid var(--secondary);display:flex;flex-direction:column;gap:3px}
+.stat-label{font-size:10px;color:var(--muted)}.stat-value{font-size:19px;font-weight:700;color:var(--primary)}.stat-sub{font-size:9px;color:var(--muted)}
+.error-bar{background:#fdecea;border:1px solid #e74c3c;border-radius:10px;padding:11px 16px;margin-bottom:16px;color:#c0392b;font-size:13px;display:none}
+/* ---- ส่วนสรุปภาพรวม ---- */
+.sum-text{font-size:14px;line-height:1.8;margin-bottom:14px;max-width:110ch}
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.sum-box{border:1px solid var(--border);border-top:4px solid var(--secondary);border-radius:10px;padding:12px 14px}
+.sum-box.sum-top{border-top-color:#27ae60}.sum-box.sum-low{border-top-color:#f39c12}.sum-box.sum-gap{border-top-color:#e74c3c}
+.sum-box h3{font-size:12.5px;color:var(--primary);margin-bottom:8px}
+.sum-box ol{padding-left:20px}
+.sum-box li{font-size:12.5px;line-height:1.75}
+.sum-empty{font-size:12px;color:var(--muted)}
+.neg-text{color:#e74c3c}
+.sum-tag{display:inline-block;background:#fff4e5;color:#b9770e;border:1px solid #f5cba7;border-radius:6px;padding:1px 8px;font-size:11px;margin-left:6px}
+@media(max-width:768px){.header{flex-direction:column;gap:8px}.header-right{justify-content:center}.container{padding:12px 10px}table{font-size:10.5px}}
+@media(max-width:480px){.header-title h1{font-size:14px}.btn{padding:5px 10px;font-size:11px}.stat-value{font-size:16px}}
+</style>
+</head>
+<body>
+<div id="loading-overlay">
+<div class="spinner"></div>
+<div style="font-size:15px;font-weight:600">กำลังโหลดข้อมูล...</div>
+<div style="font-size:12px;opacity:.8;margin-top:5px">สำนักงานชลประทานที่ 11</div>
+</div>
+<div class="header">
+<div class="header-left">
+<div class="header-logo">💧</div>
+<div class="header-title">
+<h1>Dashboard ผลการเบิกจ่ายงบประมาณ</h1>
+<p>สำนักงานชลประทานที่ 11 | ปีงบประมาณ 2568</p>
+</div>
+</div>
+<div class="header-right">
+<div class="report-date" id="report-date-display">📅 กำลังโหลด...</div>
+<button class="btn btn-refresh" onclick="loadData()">🔄 รีเฟรช</button>
+<button class="btn btn-jpeg" onclick="exportJPEG()">🖼️ JPEG</button>
+<button class="btn btn-pdf" onclick="exportPDF()">📄 PDF</button>
+<button class="btn btn-link" onclick="openShareModal()">🔗 แชร์</button>
+</div>
+</div>
+<div class="container" id="dashboard-content">
+<div class="error-bar" id="error-bar">⚠️ <span id="error-msg"></span></div>
+<!-- Stat Cards -->
+<div class="stat-row" id="stat-row" style="display:none">
+<div class="stat-card" style="border-color:#2e86c1"><div class="stat-label">ผลเบิกจ่ายรวม (พรบ โอนจัดสรร)</div><div class="stat-value" id="stat-avg1">—</div><div class="stat-sub">ผลเบิกจ่ายรวม ÷ ได้รับจัดสรรรวม</div></div>
+<div class="stat-card" style="border-color:#f39c12"><div class="stat-label">แผนเบิกจ่ายรวม</div><div class="stat-value" id="stat-plan1">—</div><div class="stat-sub">ถ่วงน้ำหนักตามงบจัดสรร</div></div>
+<div class="stat-card" style="border-color:#27ae60"><div class="stat-label">หน่วยงานที่บรรลุแผน</div><div class="stat-value" id="stat-pass">—</div><div class="stat-sub">ผลเบิกจ่าย ≥ แผน</div></div>
+<div class="stat-card" style="border-color:#e74c3c"><div class="stat-label">หน่วยงานต่ำกว่าแผน</div><div class="stat-value" id="stat-fail">—</div><div class="stat-sub">ต้องเร่งรัด</div></div>
+</div>
+<!-- Summary -->
+<div class="section-card" id="section-summary" style="display:none">
+<div class="section-header"><span class="icon">📌</span><div><h2>สรุปภาพรวมผลการเบิกจ่าย</h2><div class="sub" id="summary-sub">—</div></div></div>
+<div class="section-body">
+<p class="sum-text" id="sum-text"></p>
+<div class="sum-grid">
+<div class="sum-box sum-top"><h3>🏆 ผลเบิกจ่ายสูงสุด 3 อันดับ</h3><div id="sum-top"></div></div>
+<div class="sum-box sum-low"><h3>⚠️ ผลเบิกจ่ายต่ำสุด 3 อันดับ</h3><div id="sum-low"></div></div>
+<div class="sum-box sum-gap"><h3>🚨 ต่ำกว่าแผนมากที่สุด 3 อันดับ</h3><div id="sum-gap"></div></div>
+</div>
+</div>
+</div>
+<!-- Section 1 -->
+<div class="section-card" id="section1">
+<div class="section-header"><span class="icon">📊</span><div><h2>กราฟเปรียบเทียบผล vs แผนการเบิกจ่าย (งบ พรบ. เทียบงบโอนจัดสรร)</h2><div class="sub" id="chart1-date-sub">ณ วันที่ — | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
+<div class="section-body">
+<div class="chart-wrapper"><canvas id="chart1"></canvas></div>
+<div class="legend-box">
+<div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div>ผลเบิกจ่าย ≥ แผน</div>
+<div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>ผลเบิกจ่าย &lt; แผน</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div>แผนการเบิกจ่าย</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #8e44ad"></div>เป้า Q1</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #16a085"></div>เป้า Q2</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #d35400"></div>เป้า Q3</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #c0392b"></div>เป้า Q4</div>
+</div>
+</div>
+</div>
+<!-- Section 2 -->
+<div class="section-card" id="section2">
+<div class="section-header"><span class="icon">📋</span><div><h2>ตารางข้อมูลรายหน่วยงาน (งบ พรบ. เทียบงบโอนจัดสรร)</h2><div class="sub">ชีต พรบ | คอลัมน์ B–L | แถวที่ 7–23</div></div></div>
+<div class="section-body"><div class="table-scroll"><table id="table1"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
+</div>
+<!-- Section 3 -->
+<div class="section-card" id="section3">
+<div class="section-header"><span class="icon">📊</span><div><h2>กราฟเปรียบเทียบผล vs แผนการเบิกจ่าย (งบ พรบ. เทียบงบ พรบ)</h2><div class="sub" id="chart3-date-sub">ณ วันที่ — | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
+<div class="section-body">
+<div class="chart-wrapper"><canvas id="chart3"></canvas></div>
+<div class="legend-box">
+<div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div>ผลเบิกจ่าย ≥ แผน</div>
+<div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>ผลเบิกจ่าย &lt; แผน</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f39c12"></div>แผนการเบิกจ่าย</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #8e44ad"></div>เป้า Q1</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #16a085"></div>เป้า Q2</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #d35400"></div>เป้า Q3</div>
+<div class="legend-item"><div class="legend-dash" style="border-top:3px dashed #c0392b"></div>เป้า Q4</div>
+</div>
+</div>
+</div>
+<!-- Section 3b -->
+<div class="section-card" id="section3b">
+<div class="section-header"><span class="icon">📊</span><div><h2>กราฟแผนเบิกจ่ายรายไตรมาส vs ผลเบิกจ่าย (งบ พรบ. เทียบงบ พรบ)</h2><div class="sub">ชีต คาดการณ์ M-R แถว 43–59 | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
+<div class="section-body">
+<div class="chart-wrapper-xl"><canvas id="chart3b"></canvas></div>
+<div class="legend-box">
+<div class="legend-item"><div class="legend-dot" style="background:#aed6f1"></div>แผน ไตรมาส 1</div>
+<div class="legend-item"><div class="legend-dot" style="background:#a9dfbf"></div>แผน ไตรมาส 2</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f9e79f"></div>แผน ไตรมาส 3</div>
+<div class="legend-item"><div class="legend-dot" style="background:#f1948a"></div>แผน ไตรมาส 4</div>
+<div class="legend-item"><div class="legend-dot" style="background:#1e8449"></div>ผลเบิกจ่าย (%)</div>
+</div>
+</div>
+</div>
+<!-- Section 4 -->
+<div class="section-card" id="section4">
+<div class="section-header"><span class="icon">📋</span><div><h2>ตารางข้อมูลรายหน่วยงาน (งบ พรบ. เทียบงบ พรบ)</h2><div class="sub">ชีต พรบ.(เทียบงบ พรบ) | คอลัมน์ R–AB | แถวที่ 7–23</div></div></div>
+<div class="section-body"><div class="table-scroll"><table id="table4"><thead></thead><tbody></tbody><tfoot></tfoot></table></div></div>
+</div>
+<!-- Section 5 -->
+<div class="section-card" id="section5">
+<div class="section-header"><span class="icon">🏛️</span><div><h2>กราฟสรุปผลเบิกจ่าย 17 สำนัก</h2><div class="sub">ชีต สรุป17สำนัก | เรียงลำดับผลเบิกจ่ายมากไปน้อย</div></div></div>
+<div class="section-body"><div class="chart-wrapper-lg"><canvas id="chart5"></canvas></div></div>
+</div>
+<!-- Section 6 -->
+<div class="section-card" id="section6">
+<div class="section-header"><span class="icon">📋</span><div><h2>ตารางสรุปผลเบิกจ่าย 17 สำนัก</h2><div class="sub">ชีต สรุป17สำนัก | แถวที่ 4–20</div></div></div>
+<div class="section-body"><div class="table-scroll"><table id="table6"><thead></thead><tbody></tbody></table></div></div>
+</div>
+</div>
+<!-- Share Modal -->
+<div class="modal-overlay" id="share-modal">
+<div class="modal">
+<h3>🔗 แชร์ลิงก์ Dashboard</h3>
+<p style="font-size:12px;color:var(--muted);margin-bottom:12px">คัดลอกลิงก์ด้านล่างเพื่อแชร์ให้ผู้อื่น</p>
+<div class="url-box"><input id="share-url" readonly="" type="text"/><button class="btn btn-copy" onclick="copyLink()">📋 คัดลอก</button></div>
+<button class="modal-close" onclick="closeShareModal()">✕ ปิด</button>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+// ============================================================
+// CONFIG — Google Sheets API
+// หมายเหตุ: API key มองเห็นได้จากซอร์สของหน้าเว็บ ควรไปที่ Google Cloud Console
+// แล้วจำกัด key ให้ใช้ได้เฉพาะ Google Sheets API และเฉพาะโดเมนที่โฮสต์หน้านี้
+// และชีตต้องตั้งค่าแชร์เป็น "ทุกคนที่มีลิงก์สามารถดูได้"
+// ============================================================
+var SHEET_ID  = '1Ubkt4JzR8Ra3A9vQ0YLopgYGncF3nZzf4D9JWQ2_h6k';
+var API_KEY   = 'AIzaSyAoVWS5Is1lFGbX8RIoTuccwhr9-ILoBso';
+var BASE_URL  = 'https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/';
+
+// หน่วยของตัวเลขจำนวนเงินในชีต: 1 = ชีตเก็บเป็น "บาท" อยู่แล้ว (แสดงตามค่าในชีต)
+// ถ้าชีตเก็บเป็นล้านบาท ให้ตั้งเป็น 1000000 เพื่อแปลงเป็นบาท
+var UNIT_FACTOR = 1;
+
+// ตารางสรุป 17 สำนัก (ชีต สรุป17สำนัก)
+// - คอลัมน์ที่หัวตารางตรงกับ T6_HIDE_HEADERS จะไม่แสดง (ไม่แสดงแผนและส่วนต่าง)
+// - คอลัมน์ที่หัวตารางตรงกับ T6_AMOUNT_RE (และไม่ใช่ร้อยละ) แสดงเป็นจำนวนเงิน หน่วยบาท
+// - T6_AMOUNT_COLS: ระบุลำดับคอลัมน์ (A = 0) เพิ่มเติมได้ ถ้าหัวตารางไม่มีคำที่ตรงกัน
+// - T6_PCT_COL: คอลัมน์ร้อยละ (E = 4) ใช้เมื่อหัวตารางไม่มีเครื่องหมาย % หรือคำว่า "ร้อยละ"
+var T6_HIDE_HEADERS = /แผน|ส่วนต่าง/;
+var T6_AMOUNT_RE    = /โอนจัดสรร|จัดสรร|เบิกจ่าย|วงเงิน|งบประมาณ/;
+var T6_AMOUNT_COLS  = [];
+var T6_PCT_COL      = 4;
+
+// ============================================================
+// GLOBALS
+// ============================================================
+var chartInstances = {};
+var quarterTargets = [25, 50, 75, 100];
+var qColors = ['#8e44ad','#16a085','#d35400','#c0392b'];
+var qLabels = ['เป้า Q1','เป้า Q2','เป้า Q3','เป้า Q4'];
+var usingDemo = false;
+
+// ============================================================
+// UTILS
+// ============================================================
+function cap100(v){ return Math.min(parseFloat(v)||0, 100); }
+function numFmt(v){ var n=parseFloat(v); return isNaN(n)?'':(n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})); }
+function toNum(v){ if(typeof v==='number') return v; var n=parseFloat(String(v==null?'':v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?0:n; }
+// แปลงจำนวนเงินในชีต (ล้านบาท) เป็นบาท พร้อมคั่นหลักพัน ทศนิยม 2 ตำแหน่ง
+function baht(v){ return (toNum(v)*UNIT_FACTOR).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// เลือกค่าแบบไม่ปัดเศษ (ur) ก่อน ถ้าไม่มีใช้ค่าที่แสดงในชีต (fr)
+function rawAmt(fr, ur, ci){ return (ur&&ur[ci]!==undefined&&ur[ci]!=='')?ur[ci]:(fr?fr[ci]:0); }
+function amtOf(fr, ur, ci){ return baht(rawAmt(fr,ur,ci)); }
+// ค่าจำนวนเงินเป็นตัวเลข (บาท) สำหรับคำนวณยอดรวม
+function amtNum(fr, ur, ci){ return toNum(rawAmt(fr,ur,ci))*UNIT_FACTOR; }
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function avgOf(a){ return (a&&a.length)?a.reduce(function(x,y){return x+y;},0)/a.length:0; }
+function pct2(v){ return v.toFixed(2)+'%'; }
+
+// ยอดรวมแบบถ่วงน้ำหนัก (ไม่ใช่ค่าเฉลี่ยของร้อยละรายหน่วยงาน)
+//   ร้อยละผลเบิกจ่ายรวม = (ผลเบิกจ่ายรวมทุกหน่วยงาน ÷ ฐานรวมทุกหน่วยงาน) × 100
+//   ร้อยละแผนรวม        = ผลรวมของ (แผน% × ฐาน) ÷ ฐานรวม
+// baseKey: 'dn' = ได้รับจัดสรร รวม (เทียบงบโอนจัดสรร) | 'bn' = งบประมาณ (เทียบงบ พรบ.)
+function weightedStats(rows, baseKey){
+  var base=0,res=0,budget=0,pw=0;
+  (rows||[]).forEach(function(r){
+    var b=r[baseKey]||0;
+    base+=b; res+=(r.gn||0); budget+=(r.bn||0); pw+=(r.k||0)*b;
+  });
+  return {base:base,res:res,budget:budget,act:base>0?res/base*100:0,plan:base>0?pw/base:0};
+}
+
+function sortDesc(labels, actual, plan){
+  var arr = labels.map(function(l,i){return{label:l,actual:actual[i]||0,plan:plan[i]||0};});
+  arr.sort(function(a,b){return b.actual-a.actual;});
+  return{labels:arr.map(function(x){return x.label;}),actual:arr.map(function(x){return x.actual;}),plan:arr.map(function(x){return x.plan;})};
+}
+
+// ============================================================
+// FETCH จาก Sheets API
+// ============================================================
+function sheetsGet(range){
+  var url = BASE_URL + encodeURIComponent(range) + '?key=' + API_KEY;
+  return fetch(url).then(function(r){
+    if(!r.ok) throw new Error('Sheets API error: '+r.status);
+    return r.json();
+  }).then(function(d){ return d.values||[]; });
+}
+
+function sheetsGetBatch(ranges, renderOption){
+  var params = ranges.map(function(r){return 'ranges='+encodeURIComponent(r);}).join('&');
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values:batchGet?'+params+(renderOption?'&valueRenderOption='+renderOption:'')+'&key='+API_KEY;
+  return fetch(url).then(function(r){
+    if(!r.ok){
+      // อ่านข้อความ error ที่ Google ตอบกลับ เพื่อบอกสาเหตุจริง (เช่น ชื่อชีตผิด, key ไม่ถูกต้อง, ไม่มีสิทธิ์)
+      return r.json().catch(function(){return {};}).then(function(j){
+        var m=(j&&j.error&&j.error.message)?j.error.message:'';
+        throw new Error('HTTP '+r.status+(m?' — '+m:''));
+      });
+    }
+    return r.json();
+  }).then(function(d){
+    var result = {};
+    (d.valueRanges||[]).forEach(function(vr){
+      result[vr.range] = vr.values||[];
+    });
+    return result;
+  });
+}
+
+function getCell(data, row, col){
+  if(!data||!data[row]) return '';
+  return data[row][col]||'';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', function(){ loadData(); });
+
+// ============================================================
+// LOAD ALL DATA
+// ============================================================
+function loadData(){
+  document.getElementById('loading-overlay').style.display='flex';
+  document.getElementById('error-bar').style.display='none';
+  usingDemo = false;
+
+  // ดึงข้อมูลทั้งหมดพร้อมกัน
+  // ชื่อชีตครอบด้วย ' ' เสมอ (จำเป็นเมื่อชื่อมีจุด เว้นวรรค หรือวงเล็บ)
+  var ranges = [
+    "'พรบ'!A2",                          // วันที่
+    "'พรบ'!B7:L23",                      // ข้อมูล พรบ B-L
+    "'พรบ. (เทียบงบ พรบ)'!A2",           // วันที่ชีต 2
+    "'พรบ. (เทียบงบ พรบ)'!R7:AB23",      // ข้อมูล R-AB
+    "'คาดการณ์'!C25:F25",                // เป้าหมายไตรมาส
+    "'คาดการณ์'!M43:R59",                // แผนรายไตรมาส
+    "'สรุป17สำนัก'!B4:E20",              // สรุป17สำนัก
+    "'สรุป17สำนัก'!A3:Z20"               // ตาราง17สำนัก
+  ];
+
+  // ตัวเลขจำนวนเงินดึงอีกรอบแบบไม่ปัดเศษ เพื่อแปลงเป็นบาทได้ตรง (ถ้ารอบนี้ล้มเหลวจะใช้ค่าที่แสดงในชีตแทน)
+  var amtRanges = ["'พรบ'!B7:L23", "'พรบ. (เทียบงบ พรบ)'!R7:AB23"];
+  sheetsGetBatch(ranges)
+    .then(function(data){
+      return sheetsGetBatch(amtRanges,'UNFORMATTED_VALUE').then(
+        function(u){ return {data:data,u:u}; },
+        function(){ return {data:data,u:null}; });
+    })
+    .then(function(x){ processData(x.data, x.u); })
+    .catch(function(err){
+      console.error('Sheets API failed:', err);
+      usingDemo = true;
+      var msg;
+      if(err instanceof TypeError){
+        // fetch ล้มเหลวก่อนถึง Google: ไม่มีอินเทอร์เน็ต, ถูกบล็อกโดยพรีวิว/ไฟร์วอลล์/ส่วนขยายบล็อกโฆษณา
+        msg = 'เบราว์เซอร์เชื่อมต่อ Google Sheets ไม่ได้ ('+err.message+') — ลองเปิดไฟล์นี้ด้วยเบราว์เซอร์โดยตรง หรืออัปโหลดขึ้นเว็บโฮสต์ ไม่ใช่เปิดผ่านหน้าพรีวิวในแชต ขณะนี้แสดงข้อมูลตัวอย่างแทน';
+      } else {
+        msg = 'Google Sheets ตอบกลับว่ามีข้อผิดพลาด ('+err.message+') — ตรวจสอบชื่อชีต สิทธิ์การแชร์ชีต และการตั้งค่า API key ขณะนี้แสดงข้อมูลตัวอย่างแทน';
+      }
+      document.getElementById('error-msg').textContent = msg;
+      document.getElementById('error-bar').style.display='block';
+      onDataLoaded(getDemoData());
+    });
+}
+
+// ============================================================
+// PROCESS DATA
+// ============================================================
+function processData(raw, rawAmtData){
+  console.log('Sheets API keys:', Object.keys(raw));
+  var uKeys   = rawAmtData ? Object.keys(rawAmtData) : [];
+  var amtPrb  = rawAmtData ? (rawAmtData[uKeys[0]]||[]) : [];
+  var amtComp = rawAmtData ? (rawAmtData[uKeys[1]]||[]) : [];
+  var rangeKeys = Object.keys(raw);
+  function getRangeByIndex(idx){ return raw[rangeKeys[idx]]||[]; }
+  function safeNum(v){ var n=parseFloat(v); return isNaN(n)?0:n; }
+  function safeStr(v){ return v!=null?v.toString().trim():''; }
+
+  // 0: พรบ!A2, 1: พรบ!B7:L23, 2: พรบ.(เทียบงบ พรบ)!A2
+  // 3: พรบ.(เทียบงบ พรบ)!R7:AB23, 4: คาดการณ์!C25:F25
+  // 5: คาดการณ์!M43:R59, 6: สรุป17สำนัก!B4:E20, 7: สรุป17สำนัก!A3:Z20
+  var dateRow     = getRangeByIndex(0);
+  var prbData     = getRangeByIndex(1);
+  var prbCompData = getRangeByIndex(3);
+  var qtRow       = getRangeByIndex(4);
+  var planData    = getRangeByIndex(5);
+  var sum17Data   = getRangeByIndex(6);
+  var tbl17Data   = getRangeByIndex(7);
+
+  var reportDate = dateRow[0] ? safeStr(dateRow[0][0]) : '';
+  var quarterTargetsData = qtRow[0] ? qtRow[0].map(function(v){return cap100(v);}) : [25,50,75,100];
+
+  // ---- กราฟ 1: B=ชื่อ(0), J=เบิกจ่าย%(8), K=แผน%(9) ----
+  var c1labels=[],c1actual=[],c1plan=[];
+  (prbData||[]).forEach(function(row){
+    var name=safeStr(row[0]);
+    if(!name) return;
+    c1labels.push(name);
+    c1actual.push(cap100(row[8]));
+    c1plan.push(cap100(row[9]));
+  });
+  var c1sorted = sortDesc(c1labels,c1actual,c1plan);
+
+  // ---- ตาราง 1: B-L ----
+  var tbl1rows = [];
+  (prbData||[]).forEach(function(row,ri){
+    var name=safeStr(row[0]);
+    if(!name) return;
+    var ur=amtPrb[ri];
+    var pct=cap100(row[8]);
+    var plan=cap100(row[9]);
+    tbl1rows.push({
+      name:name, c:amtOf(row,ur,1), d:amtOf(row,ur,2), e:amtOf(row,ur,3),
+      f:amtOf(row,ur,4), g:amtOf(row,ur,5), h:amtOf(row,ur,6), i_:amtOf(row,ur,7),
+      j:pct, k:plan, l:pct-plan, sortKey:pct,
+      bn:amtNum(row,ur,1), dn:amtNum(row,ur,2), gn:amtNum(row,ur,5)
+    });
+  });
+  tbl1rows.sort(function(a,b){return b.sortKey-a.sortKey;});
+
+  // ---- กราฟ 3: R=ชื่อ(0), Z=เบิกจ่าย%(8), AA=แผน%(9) ----
+  var c3labels=[],c3actual=[],c3plan=[];
+  (prbCompData||[]).forEach(function(row){
+    var name=safeStr(row[0]);
+    if(!name) return;
+    c3labels.push(name);
+    c3actual.push(cap100(row[8]));
+    c3plan.push(cap100(row[9]));
+  });
+  var c3sorted = sortDesc(c3labels,c3actual,c3plan);
+
+  // ---- ตาราง 4: R-AB ----
+  var tbl4rows = [];
+  (prbCompData||[]).forEach(function(row,ri){
+    var name=safeStr(row[0]);
+    if(!name) return;
+    var ur=amtComp[ri];
+    var pct=cap100(row[8]);
+    var plan=cap100(row[9]);
+    tbl4rows.push({
+      name:name, c:amtOf(row,ur,1), d:amtOf(row,ur,2), e:amtOf(row,ur,3),
+      f:amtOf(row,ur,4), g:amtOf(row,ur,5), h:amtOf(row,ur,6), i_:amtOf(row,ur,7),
+      j:pct, k:plan, l:pct-plan, sortKey:pct,
+      bn:amtNum(row,ur,1), dn:amtNum(row,ur,2), gn:amtNum(row,ur,5)
+    });
+  });
+  tbl4rows.sort(function(a,b){return b.sortKey-a.sortKey;});
+
+  // ---- กราฟ 3b: แผนรายไตรมาส vs ผลเบิกจ่าย ----
+  var actualMap={};
+  (prbCompData||[]).forEach(function(row){
+    var name=safeStr(row[0]);
+    if(name) actualMap[name]=cap100(row[8]);
+  });
+  var c3bCombined=[];
+  (planData||[]).forEach(function(row){
+    var name=safeStr(row[0]);
+    if(!name) return;
+    // M=0, N=1, O=2, P=3, Q=4, R=5
+    var q1=Math.min(safeNum(row[2]),100);
+    var q2=Math.min(safeNum(row[3]),100);
+    var q3=Math.min(safeNum(row[4]),100);
+    var q4=Math.min(safeNum(row[5]),100);
+    var actual=actualMap[name]!==undefined?actualMap[name]:0;
+    c3bCombined.push({name:name,q1:q1,q2:q2,q3:q3,q4:q4,actual:actual});
+  });
+  c3bCombined.sort(function(a,b){return b.actual-a.actual;});
+
+  // ---- กราฟ 5: สรุป17สำนัก B=ชื่อ(0), E=ผล%(3) ----
+  var c5labels=[],c5actual=[];
+  (sum17Data||[]).forEach(function(row){
+    var name=safeStr(row[0]);
+    if(!name) return;
+    c5labels.push(name);
+    c5actual.push(cap100(row[3]));
+  });
+  var c5sorted = sortDesc(c5labels,c5actual,c5actual.map(function(){return 0;}));
+
+  // ---- ตาราง 6: A3:Z20 (แถว 0=หัว, แถว 1+=ข้อมูล) ----
+  var tbl6headers = (tbl17Data[0]||[]).map(function(h){return safeStr(h);});
+  var tbl6rows = (tbl17Data||[]).slice(1).filter(function(r){return safeStr(r[1])!='';});
+
+  onDataLoaded({
+    reportDate: reportDate,
+    quarterTargets: quarterTargetsData,
+    chart1: c1sorted,
+    table1: tbl1rows,
+    chart3: c3sorted,
+    chart3b: c3bCombined,
+    table4: tbl4rows,
+    chart5: c5sorted,
+    table6: {headers:tbl6headers, rows:tbl6rows}
+  });
+}
+
+// ============================================================
+// ON DATA LOADED
+// ============================================================
+function onDataLoaded(data){
+  quarterTargets = data.quarterTargets||[25,50,75,100];
+  var dateStr = data.reportDate||'';
+  document.getElementById('report-date-display').textContent='📅 ข้อมูล ณ '+(dateStr||'—');
+  document.getElementById('chart1-date-sub').textContent='ณ วันที่ '+(dateStr||'—')+' | เรียงลำดับผลเบิกจ่ายมากไปน้อย';
+  document.getElementById('chart3-date-sub').textContent='ณ วันที่ '+(dateStr||'—')+' | เรียงลำดับผลเบิกจ่ายมากไปน้อย';
+
+  lastData=data;
+  renderCharts(data);
+  buildSpecialTable('table1', data.table1, 'dn');
+  buildSpecialTable('table4', data.table4, 'bn');
+  buildTable6('table6', data.table6);
+  updateStatCards(data.chart1, data.table1);
+  buildSummary(data, dateStr);
+  document.getElementById('loading-overlay').style.display='none';
+}
+
+// ============================================================
+// STAT CARDS
+// ============================================================
+function updateStatCards(c1, tbl1){
+  if(!c1||!c1.actual||!c1.actual.length) return;
+  // ผลเบิกจ่ายรวม = Σ ผลเบิกจ่าย รวม ÷ Σ ได้รับจัดสรร รวม × 100
+  var ws=weightedStats(tbl1,'dn');
+  var avg=ws.base>0?ws.act:avgOf(c1.actual);
+  var avgP=ws.base>0?ws.plan:avgOf(c1.plan);
+  var pass=c1.actual.filter(function(v,i){return v>=(c1.plan[i]||0);}).length;
+  document.getElementById('stat-avg1').textContent=avg.toFixed(2)+'%';
+  document.getElementById('stat-plan1').textContent=avgP.toFixed(2)+'%';
+  document.getElementById('stat-pass').textContent=pass+' หน่วยงาน';
+  document.getElementById('stat-fail').textContent=(c1.actual.length-pass)+' หน่วยงาน';
+  document.getElementById('stat-row').style.display='grid';
+}
+
+// ============================================================
+// SUMMARY — สรุปภาพรวมอัตโนมัติจากข้อมูลที่โหลดมา
+// ============================================================
+function buildSummary(data, dateStr){
+  var box=document.getElementById('section-summary');
+  var c1=data.chart1;
+  if(!c1||!c1.labels||!c1.labels.length){ box.style.display='none'; return; }
+
+  // c1 เรียงผลเบิกจ่ายมากไปน้อยอยู่แล้ว
+  var rows=c1.labels.map(function(l,i){
+    var a=c1.actual[i]||0, p=c1.plan[i]||0;
+    return {name:l, actual:a, plan:p, gap:a-p};
+  });
+  // ภาพรวม = ถ่วงน้ำหนักตามยอดเงิน (ผลเบิกจ่ายรวม ÷ ได้รับจัดสรรรวม) ถ้าไม่มียอดเงินใช้ค่าเฉลี่ยเดิม
+  var ws1=weightedStats(data.table1,'dn');
+  var avgA=ws1.base>0?ws1.act:avgOf(c1.actual);
+  var avgP=ws1.base>0?ws1.plan:avgOf(c1.plan);
+  var diff=avgA-avgP;
+  var pass=rows.filter(function(r){return r.gap>=0;}).length;
+  var fail=rows.length-pass;
+
+  var top3=rows.slice(0,3);
+  var low3=rows.slice(-3).reverse();
+  var gap3=rows.filter(function(r){return r.gap<0;}).sort(function(a,b){return a.gap-b.gap;}).slice(0,3);
+
+  // ข้อความสรุป
+  var t='ภาพรวมผลเบิกจ่ายรวม (เทียบงบโอนจัดสรร) อยู่ที่ <b>'+pct2(avgA)+'</b> '
+    +(diff>=0?'สูงกว่า':'ต่ำกว่า')+'แผนรวม <b>'+pct2(avgP)+'</b> อยู่ '+Math.abs(diff).toFixed(2)+' จุดร้อยละ '
+    +'มี <b>'+pass+'</b> จาก '+rows.length+' หน่วยงานที่บรรลุแผน และ <b>'+fail+'</b> หน่วยงานต่ำกว่าแผน';
+  var c3=data.chart3;
+  if(c3&&c3.actual&&c3.actual.length){
+    var ws4=weightedStats(data.table4,'bn');
+    var a3=ws4.base>0?ws4.act:avgOf(c3.actual);
+    var p3=ws4.base>0?ws4.plan:avgOf(c3.plan);
+    t+=' เมื่อเทียบงบ พรบ. ผลเบิกจ่ายรวม <b>'+pct2(a3)+'</b> เทียบแผนรวม <b>'+pct2(p3)+'</b>';
+  }
+  t+='.';
+  var c5=data.chart5;
+  if(c5&&c5.labels&&c5.labels.length){
+    var n=c5.labels.length;
+    t+=' ในระดับ '+n+' สำนัก สำนักที่เบิกจ่ายสูงสุดคือ <b>'+esc(c5.labels[0])+'</b> ('+pct2(c5.actual[0])+') และต่ำสุดคือ <b>'+esc(c5.labels[n-1])+'</b> ('+pct2(c5.actual[n-1])+').';
+  }
+  document.getElementById('sum-text').innerHTML=t;
+
+  document.getElementById('summary-sub').innerHTML='ณ วันที่ '+esc(dateStr||'—')+(usingDemo?'<span class="sum-tag">ข้อมูลตัวอย่าง</span>':'');
+
+  function listHtml(items, fn){
+    return '<ol>'+items.map(function(r){return '<li>'+fn(r)+'</li>';}).join('')+'</ol>';
+  }
+  function rankLine(r){ return esc(r.name)+' — <b>'+pct2(r.actual)+'</b> (แผน '+pct2(r.plan)+')'; }
+  document.getElementById('sum-top').innerHTML=listHtml(top3, rankLine);
+  document.getElementById('sum-low').innerHTML=listHtml(low3, rankLine);
+  document.getElementById('sum-gap').innerHTML=gap3.length
+    ? listHtml(gap3, function(r){return esc(r.name)+' — <b class="neg-text">'+r.gap.toFixed(2)+' จุด</b> (ผล '+pct2(r.actual)+' / แผน '+pct2(r.plan)+')';})
+    : '<div class="sum-empty">ทุกหน่วยงานบรรลุแผนแล้ว</div>';
+
+  box.style.display='block';
+}
+
+// ============================================================
+// BUILD BAR CHART (กราฟ 1 & 3)
+// ============================================================
+function buildBarChart(canvasId, chartData, title){
+  if(!chartData||!chartData.labels||!chartData.labels.length) return;
+  if(isMobile()){ buildBarChartMobile(canvasId, chartData, title); return; }
+  setChartHeight(canvasId,0,0);
+  var ctx=document.getElementById(canvasId).getContext('2d');
+  if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  var planCapped=(chartData.plan||[]).map(function(v){return Math.min(v,100);});
+  var barColors=chartData.actual.map(function(v,i){return v>=(planCapped[i]||0)?'#27ae60cc':'#e74c3ccc';});
+  chartInstances[canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{labels:chartData.labels,datasets:[
+      {label:'ผลเบิกจ่าย (%)',data:chartData.actual,backgroundColor:barColors,borderColor:barColors.map(function(c){return c.replace('cc','');}),borderWidth:1.5,borderRadius:4,order:2},
+      {label:'แผนการเบิกจ่าย (%)',data:planCapped,type:'line',borderColor:'#f39c12',backgroundColor:'transparent',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#f39c12',tension:0.3,fill:false,order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},title:{display:true,text:title,font:{size:13,weight:'bold'},color:'#1a5276',padding:{bottom:10}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+(ctx.parsed.y||0).toFixed(2)+'%';}}}},
+      scales:{
+        x:{ticks:{maxRotation:45,font:{size:10},callback:function(val){var l=this.getLabelForValue(val);return l&&l.length>16?l.substring(0,16)+'…':l;}},grid:{display:false}},
+        y:{min:0,max:100,ticks:{callback:function(v){return v+'%';},font:{size:11}},grid:{color:'#e8f4f8'},title:{display:true,text:'ร้อยละ (%)',font:{size:11}}}
+      }},
+    plugins:[quarterLinePlugin()]
+  });
+}
+
+// ============================================================
+// BUILD HORIZONTAL CHART (กราฟ 5)
+// ============================================================
+function buildHorizontalChart(canvasId, chartData){
+  if(!chartData||!chartData.labels||!chartData.labels.length) return;
+  setChartHeight(canvasId,chartData.labels.length,1);
+  var ctx=document.getElementById(canvasId).getContext('2d');
+  if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  var currentTarget=quarterTargets[quarterTargets.length-1]||100;
+  var barColors=chartData.actual.map(function(v){
+    if(v>=currentTarget) return '#27ae60cc';
+    if(v>=currentTarget*0.9) return '#f39c12cc';
+    return '#e74c3ccc';
+  });
+  chartInstances[canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{labels:chartData.labels,datasets:[{label:'ผลเบิกจ่าย (%)',data:chartData.actual,backgroundColor:barColors,borderColor:barColors.map(function(c){return c.replace('cc','');}),borderWidth:1.5,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},title:{display:true,text:'สรุปผลเบิกจ่าย 17 สำนัก — เรียงลำดับมากไปน้อย',font:{size:isMobile()?12:13,weight:'bold'},color:'#1a5276',padding:{bottom:isMobile()?40:10}},
+        tooltip:{callbacks:{label:function(ctx){return 'ผลเบิกจ่าย: '+(ctx.parsed.x||0).toFixed(2)+'%';}}}},
+      scales:{
+        x:{min:0,max:100,ticks:{callback:function(v){return v+'%';},font:{size:11}},grid:{color:'#e8f4f8'},title:{display:true,text:'ร้อยละ (%)',font:{size:11}}},
+        y:{ticks:{font:{size:isMobile()?10:11},autoSkip:false},grid:{display:false}}
+      }},
+    plugins:[quarterLinePluginHorizontal()]
+  });
+}
+
+// ============================================================
+// BUILD CHART 3b — Stacked แผน + ผลเบิกจ่าย
+// ============================================================
+function buildChart3b(canvasId, combined){
+  if(!combined||!combined.length) return;
+  if(isMobile()){ buildChart3bMobile(canvasId, combined); return; }
+  setChartHeight(canvasId,0,0);
+  var ctx=document.getElementById(canvasId).getContext('2d');
+  if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  var labels=combined.map(function(x){return x.name;});
+  var actual=combined.map(function(x){return x.actual;});
+  var q1=combined.map(function(x){return x.q1;});
+  var q2=combined.map(function(x){return x.q2;});
+  var q3=combined.map(function(x){return x.q3;});
+  var q4=combined.map(function(x){return x.q4;});
+  var planTotal=q1.map(function(v,i){return v+(q2[i]||0)+(q3[i]||0)+(q4[i]||0);});
+  chartInstances[canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'แผน ไตรมาส 1',data:q1,backgroundColor:'#aed6f1',borderColor:'#5dade2',borderWidth:1,stack:'plan'},
+      {label:'แผน ไตรมาส 2',data:q2,backgroundColor:'#a9dfbf',borderColor:'#52be80',borderWidth:1,stack:'plan'},
+      {label:'แผน ไตรมาส 3',data:q3,backgroundColor:'#f9e79f',borderColor:'#f4d03f',borderWidth:1,stack:'plan'},
+      {label:'แผน ไตรมาส 4',data:q4,backgroundColor:'#f1948a',borderColor:'#e74c3c',borderWidth:1,stack:'plan'},
+      {label:'ผลเบิกจ่าย (%)',data:actual,backgroundColor:'#1e8449cc',borderColor:'#1e8449',borderWidth:1.5,borderRadius:3,stack:'actual'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:11},padding:12}},
+        title:{display:true,text:'แผนเบิกจ่ายรายไตรมาส (Stacked) vs ผลเบิกจ่าย — เรียงลำดับมากไปน้อย',font:{size:13,weight:'bold'},color:'#1a5276',padding:{bottom:10}},
+        tooltip:{callbacks:{
+          label:function(ctx){return ctx.dataset.label+': '+(ctx.parsed.y||0).toFixed(2)+'%';},
+          afterBody:function(items){var i=items[0].dataIndex;return['─────','รวมแผนทั้งปี: '+planTotal[i].toFixed(2)+'%','ผลเบิกจ่าย: '+actual[i].toFixed(2)+'%','ส่วนต่าง: '+(actual[i]-planTotal[i]).toFixed(2)+'%'];}
+        }}},
+      scales:{
+        x:{stacked:true,ticks:{maxRotation:45,font:{size:10},callback:function(val){var l=this.getLabelForValue(val);return l&&l.length>14?l.substring(0,14)+'…':l;}},grid:{display:false}},
+        y:{min:0,max:100,stacked:true,ticks:{callback:function(v){return v+'%';},font:{size:11}},grid:{color:'#e8f4f8'},title:{display:true,text:'ร้อยละ (%)',font:{size:11}}}
+      }},
+    plugins:[quarterLinePlugin(true)]
+  });
+}
+
+// ============================================================
+// QUARTER LINE PLUGINS
+// ============================================================
+// ---------- โหมดมือถือ: กราฟแท่งแนวนอน แสดงครบทุกหน่วยงาน ----------
+function isMobile(){ return window.innerWidth<=768; }
+
+// มือถือ: ปรับความสูงกล่องกราฟตามจำนวนหน่วยงาน (perCat = จำนวนแท่งต่อหน่วยงาน) เดสก์ท็อป: คืนค่าความสูงตาม CSS
+function setChartHeight(canvasId, n, perCat){
+  var w=document.getElementById(canvasId).parentNode;
+  if(isMobile()&&n>0){
+    w.style.height=Math.max(300,110+n*(perCat===1?26:36))+'px';
+  } else {
+    w.style.height='';
+  }
+}
+
+// แสดงค่าร้อยละท้ายแท่งผลเบิกจ่าย (ชุดข้อมูลที่ 0)
+function valueLabelPlugin(){
+  return{id:'valueLabels',afterDatasetsDraw:function(chart){
+    var meta=chart.getDatasetMeta(0),data=chart.data.datasets[0].data,c=chart.ctx;
+    c.save();c.font='bold 9px Sarabun,sans-serif';c.fillStyle='#1c2833';c.textBaseline='middle';
+    meta.data.forEach(function(bar,i){
+      c.fillText((data[i]||0).toFixed(1)+'%',bar.x+4,bar.y);
+    });
+    c.restore();
+  }};
+}
+
+function buildBarChartMobile(canvasId, chartData, title){
+  setChartHeight(canvasId,chartData.labels.length,2);
+  var ctx=document.getElementById(canvasId).getContext('2d');
+  if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  var planCapped=(chartData.plan||[]).map(function(v){return Math.min(v,100);});
+  var barColors=chartData.actual.map(function(v,i){return v>=(planCapped[i]||0)?'#27ae60cc':'#e74c3ccc';});
+  chartInstances[canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{labels:chartData.labels,datasets:[
+      {label:'ผลเบิกจ่าย (%)',data:chartData.actual,backgroundColor:barColors,borderColor:barColors.map(function(c){return c.replace('cc','');}),borderWidth:1,borderRadius:3,categoryPercentage:0.85,barPercentage:0.95},
+      {label:'แผนการเบิกจ่าย (%)',data:planCapped,backgroundColor:'#f39c12cc',borderColor:'#f39c12',borderWidth:1,borderRadius:3,categoryPercentage:0.85,barPercentage:0.95}
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      layout:{padding:{right:34}},
+      plugins:{legend:{display:false},title:{display:true,text:title,font:{size:12,weight:'bold'},color:'#1a5276',padding:{bottom:40}},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+(c.parsed.x||0).toFixed(2)+'%';}}}},
+      scales:{
+        x:{min:0,max:100,ticks:{callback:function(v){return v+'%';},font:{size:10}},grid:{color:'#e8f4f8'}},
+        y:{ticks:{font:{size:10},autoSkip:false},grid:{display:false}}
+      }},
+    plugins:[quarterLinePluginHorizontal(),valueLabelPlugin()]
+  });
+}
+
+function buildChart3bMobile(canvasId, combined){
+  setChartHeight(canvasId,combined.length,2);
+  var ctx=document.getElementById(canvasId).getContext('2d');
+  if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
+  var labels=combined.map(function(x){return x.name;});
+  var actual=combined.map(function(x){return x.actual;});
+  var q1=combined.map(function(x){return x.q1;});
+  var q2=combined.map(function(x){return x.q2;});
+  var q3=combined.map(function(x){return x.q3;});
+  var q4=combined.map(function(x){return x.q4;});
+  var planTotal=q1.map(function(v,i){return v+(q2[i]||0)+(q3[i]||0)+(q4[i]||0);});
+  chartInstances[canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'ผลเบิกจ่าย (%)',data:actual,backgroundColor:'#1e8449cc',borderColor:'#1e8449',borderWidth:1,borderRadius:3,stack:'actual'},
+      {label:'แผน ไตรมาส 1',data:q1,backgroundColor:'#aed6f1',borderColor:'#5dade2',borderWidth:1,stack:'plan'},
+      {label:'แผน ไตรมาส 2',data:q2,backgroundColor:'#a9dfbf',borderColor:'#52be80',borderWidth:1,stack:'plan'},
+      {label:'แผน ไตรมาส 3',data:q3,backgroundColor:'#f9e79f',borderColor:'#f4d03f',borderWidth:1,stack:'plan'},
+      {label:'แผน ไตรมาส 4',data:q4,backgroundColor:'#f1948a',borderColor:'#e74c3c',borderWidth:1,stack:'plan'}
+    ]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      layout:{padding:{right:34}},
+      plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},padding:8,boxWidth:12}},
+        title:{display:true,text:'แผนรายไตรมาส vs ผลเบิกจ่าย — เรียงลำดับมากไปน้อย',font:{size:12,weight:'bold'},color:'#1a5276',padding:{bottom:40}},
+        tooltip:{callbacks:{
+          label:function(c){return c.dataset.label+': '+(c.parsed.x||0).toFixed(2)+'%';},
+          afterBody:function(items){var i=items[0].dataIndex;return['─────','รวมแผนทั้งปี: '+planTotal[i].toFixed(2)+'%','ผลเบิกจ่าย: '+actual[i].toFixed(2)+'%','ส่วนต่าง: '+(actual[i]-planTotal[i]).toFixed(2)+'%'];}
+        }}},
+      scales:{
+        x:{stacked:true,min:0,max:100,ticks:{callback:function(v){return v+'%';},font:{size:10}},grid:{color:'#e8f4f8'}},
+        y:{stacked:true,ticks:{font:{size:10},autoSkip:false},grid:{display:false}}
+      }},
+    plugins:[quarterLinePluginHorizontal(),valueLabelPlugin()]
+  });
+}
+
+// วาดกราฟทั้งหมดใหม่ (ใช้ตอนโหลดข้อมูล และตอนหมุนจอ/ย่อขยายหน้าต่างข้ามจุดเปลี่ยนมือถือ↔คอม)
+var lastData=null, lastMobile=null, resizeTimer=null;
+function renderCharts(data){
+  lastMobile=isMobile();
+  buildBarChart('chart1', data.chart1, 'ผลเบิกจ่าย (%) เทียบงบโอนจัดสรร');
+  buildBarChart('chart3', data.chart3, 'ผลเบิกจ่าย (%) เทียบงบ พรบ');
+  buildChart3b('chart3b', data.chart3b||[]);
+  buildHorizontalChart('chart5', data.chart5);
+}
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(function(){
+    if(lastData&&isMobile()!==lastMobile) renderCharts(lastData);
+  },250);
+});
+
+function quarterLinePlugin(labelInside){
+  return{id:'quarterLines',afterDraw:function(chart){
+    var ctx2=chart.ctx,yAxis=chart.scales['y'],xAxis=chart.scales['x'];
+    if(!yAxis||!xAxis) return;
+    quarterTargets.forEach(function(val,i){
+      var y=yAxis.getPixelForValue(val);
+      ctx2.save();ctx2.beginPath();ctx2.setLineDash([8,5]);ctx2.strokeStyle=qColors[i];ctx2.lineWidth=2;
+      ctx2.moveTo(xAxis.left,y);ctx2.lineTo(xAxis.right,y);ctx2.stroke();
+      ctx2.setLineDash([]);ctx2.font='bold 10px Sarabun,sans-serif';
+      var lbl=qLabels[i]+' '+val+'%',tw=ctx2.measureText(lbl).width,bx=xAxis.right-tw-16,by=(labelInside&&y-16<yAxis.top)?y+3:y-16;
+      ctx2.fillStyle=qColors[i];ctx2.beginPath();
+      if(ctx2.roundRect) ctx2.roundRect(bx-4,by,tw+8,14,3); else ctx2.rect(bx-4,by,tw+8,14);
+      ctx2.fill();ctx2.fillStyle='#fff';ctx2.fillText(lbl,bx,by+11);ctx2.restore();
+    });
+  }};
+}
+
+function quarterLinePluginHorizontal(){
+  return{id:'quarterLinesH',afterDraw:function(chart){
+    var ctx2=chart.ctx,xAxis=chart.scales['x'],yAxis=chart.scales['y'];
+    if(!xAxis||!yAxis) return;
+    quarterTargets.forEach(function(val,i){
+      var x=xAxis.getPixelForValue(val);
+      ctx2.save();ctx2.beginPath();ctx2.setLineDash([8,5]);ctx2.strokeStyle=qColors[i];ctx2.lineWidth=2;
+      ctx2.moveTo(x,yAxis.top);ctx2.lineTo(x,yAxis.bottom);ctx2.stroke();
+      ctx2.setLineDash([]);ctx2.font='bold 10px Sarabun,sans-serif';
+      var narrow=chart.width<520;
+      var lbl=(narrow?qLabels[i].replace('เป้า ',''):qLabels[i])+' '+val+'%',tw=ctx2.measureText(lbl).width,bx=Math.min(x-tw/2-4,chart.width-tw-12),
+          by=narrow?(yAxis.top-34+(i%2)*16):yAxis.top+2;
+      ctx2.fillStyle=qColors[i];ctx2.beginPath();
+      if(ctx2.roundRect) ctx2.roundRect(bx,by,tw+8,14,3); else ctx2.rect(bx,by,tw+8,14);
+      ctx2.fill();ctx2.fillStyle='#fff';ctx2.fillText(lbl,bx+4,by+11);ctx2.restore();
+    });
+  }};
+}
+
+// ============================================================
+// BUILD SPECIAL TABLE (ตาราง 1 & 4)
+// baseKey: ฐานที่ใช้คำนวณร้อยละรวมในแถวรวมทั้งสิ้น ('dn' = ได้รับจัดสรร รวม, 'bn' = งบประมาณ)
+// ============================================================
+function buildSpecialTable(tableId, rows, baseKey){
+  var table=document.getElementById(tableId);
+  table.querySelector('thead').innerHTML='';
+  table.querySelector('tbody').innerHTML='';
+  table.querySelector('tfoot').innerHTML='';
+  var headers=['หน่วยงาน','งบประมาณ','ได้รับจัดสรร รวม','ได้รับจัดสรร จ้างเหมา','ได้รับจัดสรร ทำเอง','ผลเบิกจ่าย รวม','ผลเบิกจ่าย จ้างเหมา','ผลเบิกจ่าย ทำเอง','เบิกจ่าย%','แผน%','ส่วนต่าง'];
+  var htr=document.createElement('tr');
+  headers.forEach(function(h,ci){
+    var th=document.createElement('th');
+    if(ci>=1&&ci<=7) th.innerHTML=h+'<br><span style="font-weight:400;font-size:10px">(บาท)</span>'; else th.textContent=h;
+    if(ci>=2&&ci<=4) th.className='th-alloc';
+    else if(ci>=5&&ci<=7) th.className='th-result';
+    else if(ci>=8) th.className='th-pct';
+    htr.appendChild(th);
+  });
+  table.querySelector('thead').appendChild(htr);
+
+  if(!rows||!rows.length){
+    var er=document.createElement('tr');var td=document.createElement('td');
+    td.colSpan=11;td.textContent='ไม่มีข้อมูล';td.style.cssText='text-align:center;color:#999;padding:18px';
+    er.appendChild(td);table.querySelector('tbody').appendChild(er);return;
+  }
+
+  // totals สำหรับแถวรวม (คอลัมน์ 1-7)
+  var totals=[0,0,0,0,0,0,0,0,0,0,0];
+  var keys=['name','c','d','e','f','g','h','i_','j','k','l'];
+
+  function parseAmt(val){ var n=parseFloat((val||'').toString().replace(/,/g,'')); return isNaN(n)?0:n; }
+
+  rows.forEach(function(row){
+    var tr=document.createElement('tr');
+    keys.forEach(function(k,ci){
+      var td=document.createElement('td');
+      var val=row[k];
+      if(ci===0){
+        td.textContent=val;td.style.textAlign='left';
+      } else if(ci===1){
+        td.textContent=val;
+        totals[ci]+=parseAmt(val);
+      } else if(ci>=2&&ci<=4){
+        td.textContent=val;td.className=(ci===2)?'td-alloc-sum':'td-alloc';
+        totals[ci]+=parseAmt(val);
+      } else if(ci>=5&&ci<=7){
+        td.textContent=val;td.className=(ci===5)?'td-result-sum':'td-result';
+        totals[ci]+=parseAmt(val);
+      } else if(ci===8){
+        td.textContent=val.toFixed(2)+'%';td.className='pct';
+        td.style.color=val>=80?'#27ae60':val>=60?'#f39c12':'#e74c3c';
+      } else if(ci===9){
+        td.textContent=val.toFixed(2)+'%';td.className='pct';
+      } else if(ci===10){
+        td.textContent=val.toFixed(2)+'%';
+        td.className='pct '+(val<0?'neg':'pos');
+      } else {
+        td.textContent=val;
+      }
+      tr.appendChild(td);
+    });
+    table.querySelector('tbody').appendChild(tr);
+  });
+
+  // แถวรวม: คอลัมน์ 1-7 = ผลรวมของทุกหน่วยงาน, คอลัมน์ 8-10 = ร้อยละรวมแบบถ่วงน้ำหนัก
+  var ws=weightedStats(rows, baseKey||'dn');
+  var ftr=document.createElement('tr');
+  keys.forEach(function(k,ci){
+    var td=document.createElement('td');
+    if(ci===0){td.textContent='รวมทั้งสิ้น';}
+    else if(ci>=1&&ci<=7){
+      td.textContent=totals[ci].toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(ci>=2&&ci<=4) td.className='td-alloc';
+      else if(ci>=5) td.className='td-result';
+    } else if(ci===8){
+      td.textContent=ws.base>0?ws.act.toFixed(2)+'%':'—';td.className='ft-pct';
+    } else if(ci===9){
+      td.textContent=ws.base>0?ws.plan.toFixed(2)+'%':'—';td.className='ft-pct';
+    } else if(ci===10){
+      td.textContent=ws.base>0?(ws.act-ws.plan).toFixed(2)+'%':'—';td.className='ft-pct';
+    } else {td.textContent='—';}
+    ftr.appendChild(td);
+  });
+  table.querySelector('tfoot').appendChild(ftr);
+}
+
+// ============================================================
+// BUILD TABLE 6 (สรุป17สำนัก)
+// ============================================================
+function buildTable6(tableId, tableData){
+  var table=document.getElementById(tableId);
+  table.querySelector('thead').innerHTML='';
+  table.querySelector('tbody').innerHTML='';
+  if(!tableData||!tableData.headers||!tableData.headers.length) return;
+  var rows=tableData.rows||[];
+
+  // เลือกคอลัมน์ที่แสดง: ตัดคอลัมน์แผน/ส่วนต่าง และคอลัมน์ว่างทิ้ง
+  var cols=[];
+  tableData.headers.forEach(function(h,ci){
+    var empty=!h&&!rows.some(function(r){return r[ci]!==undefined&&r[ci]!=='';});
+    if(empty||T6_HIDE_HEADERS.test(h||'')) return;
+    cols.push(ci);
+  });
+
+  // ชนิดคอลัมน์: pct = ร้อยละ, amt = จำนวนเงิน (บาท), text = ข้อความ
+  function kind(ci){
+    var h=tableData.headers[ci]||'';
+    if(/%|ร้อยละ/.test(h)||ci===T6_PCT_COL) return 'pct';
+    if(T6_AMOUNT_RE.test(h)||T6_AMOUNT_COLS.indexOf(ci)>=0) return 'amt';
+    return 'text';
+  }
+
+  var htr=document.createElement('tr');
+  cols.forEach(function(ci){
+    var ht=(tableData.headers[ci]||'').replace(/ล้านบาท/g,'บาท');
+    if(kind(ci)==='amt'&&ht.indexOf('บาท')<0) ht+=' (บาท)';
+    var th=document.createElement('th');th.textContent=ht;htr.appendChild(th);
+  });
+  table.querySelector('thead').appendChild(htr);
+
+  rows.forEach(function(row){
+    var tr=document.createElement('tr');
+    cols.forEach(function(ci){
+      var td=document.createElement('td');
+      var cell=(row[ci]==null)?'':row[ci];
+      var k=kind(ci);
+      if(cell!==''&&k==='amt'&&!isNaN(parseFloat(String(cell).replace(/[^0-9.\-]/g,'')))){
+        td.textContent=baht(cell);
+      } else if(cell!==''&&k==='pct'&&!isNaN(parseFloat(cell))){
+        var num=parseFloat(cell), pct=Math.min(num,100);
+        td.textContent=pct.toFixed(2)+'%';
+        td.className=num<0?'pct neg':'pct';
+        if(num>=0) td.style.color=pct>=80?'#27ae60':pct>=60?'#f39c12':'#e74c3c';
+      } else {
+        td.textContent=cell;
+        td.style.textAlign=isNaN(parseFloat(cell))?'left':'center';
+      }
+      tr.appendChild(td);
+    });
+    table.querySelector('tbody').appendChild(tr);
+  });
+}
+
+// ============================================================
+// EXPORT JPEG
+// ============================================================
+// ส่งออกทีละกราฟ/ทีละตาราง แยกไฟล์ละส่วน (id ของ section, ชื่อไฟล์)
+var EXPORT_SECTIONS=[
+  ['section-summary','สรุปภาพรวม'],
+  ['section1','กราฟผลvsแผน_เทียบงบโอนจัดสรร'],
+  ['section2','ตาราง_เทียบงบโอนจัดสรร'],
+  ['section3','กราฟผลvsแผน_เทียบงบพรบ'],
+  ['section3b','กราฟแผนรายไตรมาส_vs_ผลเบิกจ่าย'],
+  ['section4','ตาราง_เทียบงบพรบ'],
+  ['section5','กราฟสรุป17สำนัก'],
+  ['section6','ตารางสรุป17สำนัก']
+];
+var exportingJPEG=false;
+function exportJPEG(){
+  if(exportingJPEG) return;
+  var items=EXPORT_SECTIONS.filter(function(s){
+    var el=document.getElementById(s[0]);
+    return el&&el.style.display!=='none';
+  });
+  if(!items.length){showToast('❌ ไม่มีส่วนที่จะส่งออก','#e74c3c');return;}
+  exportingJPEG=true;
+  var done=0;
+  function next(i){
+    if(i>=items.length){
+      exportingJPEG=false;
+      showToast('✅ ดาวน์โหลด JPEG ครบ '+done+' ไฟล์','#27ae60');
+      return Promise.resolve();
+    }
+    showToast('⏳ กำลังสร้างภาพ '+(i+1)+'/'+items.length+' ...');
+    return html2canvas(document.getElementById(items[i][0]),{scale:1.5,useCORS:true,backgroundColor:'#ffffff',logging:false})
+    .then(function(canvas){
+      var a=document.createElement('a');
+      a.download='dashboard_สชป11_'+(i+1)+'_'+items[i][1]+'_'+getDateStr()+'.jpg';
+      a.href=canvas.toDataURL('image/jpeg',0.92);
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      done++;
+      // หน่วงเล็กน้อยระหว่างไฟล์ เพื่อไม่ให้เบราว์เซอร์บล็อกการดาวน์โหลดหลายไฟล์
+      return new Promise(function(r){setTimeout(r,500);});
+    })
+    .then(function(){return next(i+1);});
+  }
+  next(0).catch(function(){
+    exportingJPEG=false;
+    showToast('❌ ไม่สามารถสร้าง JPEG ได้','#e74c3c');
+  });
+}
+
+// ============================================================
+// EXPORT PDF
+// ============================================================
+function exportPDF(){
+  showToast('⏳ กำลังสร้าง PDF...');
+  html2canvas(document.getElementById('dashboard-content'),{scale:1.5,useCORS:true,backgroundColor:'#f0f4f8',logging:false})
+  .then(function(canvas){
+    var {jsPDF}=window.jspdf;
+    var pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
+    var pW=pdf.internal.pageSize.getWidth(),pH=pdf.internal.pageSize.getHeight();
+    var imgH=pW*(canvas.height/canvas.width),pageH=pH-10,y=5,remaining=imgH;
+    var imgData=canvas.toDataURL('image/jpeg',0.92);
+    while(remaining>0){pdf.addImage(imgData,'JPEG',5,y,pW-10,imgH);remaining-=pageH;if(remaining>0){pdf.addPage();y=5-(imgH-remaining);}}
+    pdf.save('dashboard_สชป11_'+getDateStr()+'.pdf');
+    showToast('✅ ดาวน์โหลด PDF สำเร็จ','#27ae60');
+  }).catch(function(){showToast('❌ ไม่สามารถสร้าง PDF ได้','#e74c3c');});
+}
+
+// ============================================================
+// SHARE
+// ============================================================
+function openShareModal(){document.getElementById('share-url').value=window.location.href;document.getElementById('share-modal').classList.add('active');}
+function closeShareModal(){document.getElementById('share-modal').classList.remove('active');}
+function copyLink(){
+  var input=document.getElementById('share-url');input.select();
+  navigator.clipboard.writeText(input.value).then(function(){showToast('✅ คัดลอกลิงก์แล้ว!','#27ae60');}).catch(function(){document.execCommand('copy');showToast('✅ คัดลอกลิงก์แล้ว!','#27ae60');});
+  closeShareModal();
+}
+
+// ============================================================
+// TOAST & UTILS
+// ============================================================
+function showToast(msg,color){
+  var t=document.getElementById('toast');t.textContent=msg;t.style.background=color||'#2e86c1';
+  t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);
+}
+function getDateStr(){var d=new Date();return d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2);}
+
+// ============================================================
+// DEMO DATA (fallback)
+// ============================================================
+function getDemoData(){
+  var units=['คส.ชป.11','คป.นนทบุรี','คป.ปทุมธานี','คป.สมุทรปราการ','คป.สมุทรสาคร','คบ.เจ้าเจ็ดบางยี่หน','คบ.ชลหารพิจิตร','คบ.พระพิมล','คบ.พระยาบรรลือ','คบ.พระองค์ไชยานุชิต','คบ.ภาษีเจริญ','คบ.รังสิตใต้','คบ.รังสิตเหนือ','ผคก.ชป.11','ผจบ.ชป.11','ผผง.ชป.11','ผวศ.ชป.11'];
+  var a1=[68.5,55.3,71.2,48.9,66.1,59.8,73.4,44.2,68.7,52.1,61.3,57.8,63.2,72.1,49.5,58.4,65.0];
+  var p1=[70.0,60.0,70.0,55.0,65.0,62.0,70.0,50.0,65.0,58.0,65.0,62.0,68.0,70.0,55.0,60.0,65.0];
+  var c1=sortDesc(units,a1,p1);
+  var tbl1=units.map(function(u,i){return{name:u,c:'10,000,000',d:'10,000,000',e:'6,000,000',f:'4,000,000',g:(a1[i]*100000).toLocaleString('th-TH',{minimumFractionDigits:2}),h:(a1[i]*60000).toLocaleString('th-TH',{minimumFractionDigits:2}),i_:(a1[i]*40000).toLocaleString('th-TH',{minimumFractionDigits:2}),j:a1[i],k:p1[i],l:a1[i]-p1[i],sortKey:a1[i],bn:10000000,dn:10000000,gn:a1[i]*100000};});
+  tbl1.sort(function(a,b){return b.sortKey-a.sortKey;});
+  var offices=['สชป.1 เชียงใหม่','สชป.2 ลำปาง','สชป.3 พิษณุโลก','สชป.4 กำแพงเพชร','สชป.5 อุดรธานี','สชป.6 ขอนแก่น','สชป.7 อุบลราชธานี','สชป.8 นครราชสีมา','สชป.9 ชลบุรี','สชป.10 ลพบุรี','สชป.11 นนทบุรี','สชป.12 ชัยนาท','สชป.13 กาญจนบุรี','สชป.14 ประจวบคีรีขันธ์','สชป.15 นครศรีธรรมราช','สชป.16 สงขลา','สชป.17 นราธิวาส'];
+  var a5=[72,68,65,71,58,63,69,74,61,67,66,70,64,59,62,55,48];
+  var c5=sortDesc(offices,a5,a5.map(function(){return 0;}));
+  return{
+    reportDate:'30/09/2568',quarterTargets:[25,50,75,100],
+    chart1:c1,table1:tbl1,
+    chart3:c1,table4:tbl1,
+    chart3b:units.map(function(u,i){return{name:u,q1:10,q2:20,q3:24,q4:46,actual:a1[i]};}).sort(function(a,b){return b.actual-a.actual;}),
+    chart5:c5,
+    table6:{headers:['ลำดับ','สำนักงานชลประทาน','โอนจัดสรร','เบิกจ่าย','ร้อยละ'],rows:offices.map(function(o,i){var al=(150+i*7)*1000000;return[''+(i+1),o,''+al,''+Math.round(al*a5[i]/100),a5[i]+'%'];})}
+  };
+}
+</script>
+</body>
+</html>
